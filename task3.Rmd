@@ -1,0 +1,48 @@
+---
+title: "task3_truenumber"
+author: "zby"
+date: "12/7/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(knitr)
+library(gutenbergr)
+library(tidyverse)
+```
+
+## MA615 Assignment4 Text Analysis_Task3 
+
+Installing the R tnum package
+```{r cars}
+#install.packages("glue")
+#install.packages("devtools")
+#install.packages(c('devtools','cli'))  package or namespace load failed for ‘devtools’ in loadNamespace(j <- i[[1L]], c(lib.loc, .libPaths()), versionCheck = vI[[j]]):载入了名字空间‘cli’ 3.0.1，但需要的是>= 3.1.0
+library(devtools)
+devtools::install_github("Truenumbers/tnum/tnum",force = TRUE) 
+```
+
+
+Load the tnum package and authorize the mssp1 server
+```{r pressure, echo=FALSE}
+library(tnum)
+tnum.authorize("mssp1.bu.edu") #connect and authenticate to Truenumbers server
+tnum.setSpace("test2") #set a particular numberspace as current
+```
+
+```{r}
+source("Book2TN-v6A-1.R")
+TCB<-gutenberg_download(gutenberg_id = 296) #Download the book
+#TCB_txt<-read_lines("The cash boy.txt")
+# write.table(TCB,"The cash boy.txt",row.names=FALSE,col.names=FALSE)
+TCB_fix<-read.table("The cash boy.txt",header=T)
+#tnBooksFromLines(TCB_fix$text,"TheCashBoy1/ZZzby")
+tnum.getDBPathList(taxonomy="subject",levels = 2) #get phrase taxonomies
+```
+
+### use query to check INs
+
+```{r}
+q20<-tnum.que
+```

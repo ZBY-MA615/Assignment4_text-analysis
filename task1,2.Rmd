@@ -1,0 +1,141 @@
+---
+title: "tas1,2"
+author: "zby"
+date: "12/9/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidytext)
+library(dplyr)
+library(gutenbergr)
+library(tidyr)
+library(stringr)
+library(ggplot2)
+library(textdata)
+```
+
+## MA615 Assignment4_Text Analysis 
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r}
+get_sentiments("nrc")
+get_sentiments("bing")
+get_sentiments("afinn")
+MD<-gutenberg_download(296,mirror=NULL)
+
+```
+
+### Word frequencies
+
+You can also embed plots, for example:
+
+```{r ,echo=FALSE}
+tidy_MD <- MD %>%
+  mutate(
+    linenumber=row_number(),
+    chapter=cumsum(str_detect(text,regex("^chapter[\\divxlc]",ignore_case = TRUE)))
+  )%>%
+  ungroup()%>%
+  unnest_tokens(word, text) %>% #convert it to tidy format
+  anti_join(stop_words)
+
+tidy_MD %>%
+  count(word,sort = TRUE) #the most common words
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of 
+
+### sentiment analysis with inner_join
+
+```{r}
+nrc_fear<-get_sentiments("nrc")%>% #for the fear words
+  filter(sentiment=="fear")
+tidy_MD %>% 
+  inner_join(nrc_fear) %>% #perform the sentiment analysis
+  count(word,sort = TRUE) #the most common fear words in MD
+```
+
+### count up how many positive and negative words there are in defined section
+
+```{r}
+afinn<-tidy_MD%>%
+  inner_join(get_sentiments("afinn")) %>%
+  group_by(index=linenumber%/%80)%>%
+  summarise(sentiment=sum(value))%>%
+  mutate(method="AFINN")
+
+bing_and_nrc <- bind_rows(
+  tidy_MD %>% 
+    inner_join(get_sentiments("bing")) %>%
+    mutate(method = "Bing et al."),
+  tidy_MD %>% 
+    inner_join(get_sentiments("nrc") %>% 
+                 filter(sentiment %in% c("positive", 
+                                         "negative"))
+    ) %>%
+    mutate(method = "NRC")) %>%
+  count(method, index = linenumber %/% 80, sentiment) %>%
+  pivot_wider(names_from = sentiment,
+              values_from = n,
+              values_fill = 0) %>% 
+  mutate(sentiment = positive - negative)
+```
+
+### plot the sentiment scores
+
+```{r}
+bind_rows(afinn, bing_and_nrc) %>%
+  ggplot(aes(index, sentiment, fill = method)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~method, ncol = 1, scales = "free_y")
+```
+
+### look at how many positive and negative words are in these lexicons
+
+```{r}
+get_sentiments("nrc") %>% 
+  filter(sentiment %in% c("positive", "negative")) %>% 
+  count(sentiment)
+
+get_sentiments("bing") %>% 
+  count(sentiment)
+```
+
+### Extra credit
+
+```{r}
+bing_and_nrc_lou <- bind_rows(
+  tidy_MD %>% 
+    inner_join(get_sentiments("bing")) %>%
+    mutate(method = "Bing et al."),
+  tidy_MD %>% 
+    inner_join(get_sentiments("nrc") %>% 
+                 filter(sentiment %in% c("positive", 
+                                         "negative"))
+    ) %>%
+    mutate(method = "NRC"),
+  tidy_MD %>%
+  inner_join(get_sentiments("loughran")%>%
+               filter(sentiment %in% c("positive","negative"))
+  )%>%
+  mutate(method="loughran"))%>%
+  count(method, index = linenumber %/% 80, sentiment) %>%
+  pivot_wider(names_from = sentiment,
+              values_from = n,
+              values_fill = 0) %>% 
+  
+  mutate(sentiment = positive - negative)
+```
+
+
+```{r}
+bind_rows(afinn, bing_and_nrc_lou) %>%
+  ggplot(aes(index, sentiment, fill = method)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~method, ncol = 1, scales = "free_y")
+```
