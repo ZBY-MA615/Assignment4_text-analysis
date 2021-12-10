@@ -1,12 +1,13 @@
 ---
-title: "tas1,2"
-author: "zby"
+title: "MA615 Assignment4_Text Analysis"
+author: "ZhangBiyao"
 date: "12/9/2021"
 output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(warning=F,message = F,echo=F,highlight=F)
+knitr::opts_chunk$set(fig.width=6, fig.height=4,fig.align = "center") 
 library(tidytext)
 library(dplyr)
 library(gutenbergr)
@@ -14,25 +15,33 @@ library(tidyr)
 library(stringr)
 library(ggplot2)
 library(textdata)
+library(tidyverse)
 ```
 
-## MA615 Assignment4_Text Analysis 
+# Task 1  
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+## Intriduction
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+The book I choose is The Cash Boy,a juvenile fiction.  Here is the link https://www.gutenberg.org/ebooks/296. I used the gutenbergr package which provides access to the public domain works from Project Gutenberg collection to download this book.
+
+The story is about a little poor boy, which lost everyone he loved except his little sister. Because the situation with no parents and income, the boy moved to New York for himself, so he could make some money for him and his sister.
+
+# Task 2
+
+## Preface
+
+I used tidytext package which provides access to "AFINN", "bing" and "nrc", three general sentiment lexicons.
 
 ```{r}
 get_sentiments("nrc")
 get_sentiments("bing")
 get_sentiments("afinn")
 MD<-gutenberg_download(296,mirror=NULL)
-
 ```
 
 ### Word frequencies
 
-You can also embed plots, for example:
+Firstly, I look at word frequencies and the most common words in The Cash Boy.
 
 ```{r ,echo=FALSE}
 tidy_MD <- MD %>%
@@ -48,24 +57,87 @@ tidy_MD %>%
   count(word,sort = TRUE) #the most common words
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of 
+According to the above results, we can conclude that "frank" (the cash boy's name)is the most common word. After looking at word frequencies, most of the words are name. Frank's experiences are unfortunate, I want to find some negative words, such as fear, and do the sentiment analysis about fear.
 
-### sentiment analysis with inner_join
+## sentiment analysis
+
+To analyze the sentiment of The Cash Boy, I consider the text as a combination of individual words and the sentiment content as the sum of individual words. 
+
+Firstly, I used "bing" to count the number of positive words and negative words.
 
 ```{r}
+pnn<-tidy_MD%>%
+  inner_join(get_sentiments("bing"))%>%
+  count(word,sentiment,sort=TRUE)%>%
+  ungroup()
+pnn
+
+pnn %>%
+  group_by(sentiment) %>%
+  slice_max(n, n = 10) %>% 
+  ungroup() %>%
+  mutate(word = reorder(word, n)) %>%
+  ggplot(aes(n, word, fill = sentiment)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~sentiment,scales = "free_y") +
+  labs(x = "number",y =" Word")+
+  theme_bw()
+```
+Secondly, I used "nrc" to select words which are negative.
+
+```{r,echo=FALSE}
 nrc_fear<-get_sentiments("nrc")%>% #for the fear words
   filter(sentiment=="fear")
-tidy_MD %>% 
+ff<-tidy_MD %>% 
   inner_join(nrc_fear) %>% #perform the sentiment analysis
   count(word,sort = TRUE) #the most common fear words in MD
+ff
+```
+
+According to the results of ff, there are indeed some words related to fear
+
+Thirdly, I selected words with n>3 and visualize them. 
+```{r}
+ff1<-filter(ff,n>3)
+ff1
+ggplot(data=ff1,mapping=aes(n,word,color=word))+geom_point()+labs(title = "Common Negative Words")
+```
+According to the plot, it is obvious that "afraid" is the most common negative word related to fear. 
+
+
+```{r}
+# Kernel density plots for negative words
+#grouped by word(indicated by word)
+qplot(n,word,data=ff1,geom=c("boxplot","jitter"),fill=word,alpha=I(.5),main="Distribution of common negative words",xlab="Number",ylab="Word")
 ```
 
 ### count up how many positive and negative words there are in defined section
 
+I defined an index(integer division)to keep track of where we are in this fiction. This index counts up sections of 40 lines of the text. Besides, I also calculated a net sentiment(positive-negative).
+
+```{r}
+tcb1 <- tidy_MD %>%
+  inner_join(get_sentiments("bing")) %>%
+  count(index = linenumber %/% 40, sentiment) %>%
+  pivot_wider(names_from = sentiment, values_from = n, values_fill = 0) %>% 
+  mutate(sentiment = positive - negative)
+tcb1
+```
+
+
+
+
+
+
+
+### Comparative Analysis 
+
+I compared the results when different lexicons are used. It is obvious that these three lexicons differ in the kind of output they produce--signed real numbers, binary outcomes, multi-dimensional indicators. I visualized the sentiment score and examine how the sentiment changes across the fiction.
+
 ```{r}
 afinn<-tidy_MD%>%
   inner_join(get_sentiments("afinn")) %>%
-  group_by(index=linenumber%/%80)%>%
+  group_by(index=linenumber%/%40)%>%
   summarise(sentiment=sum(value))%>%
   mutate(method="AFINN")
 
@@ -79,14 +151,13 @@ bing_and_nrc <- bind_rows(
                                          "negative"))
     ) %>%
     mutate(method = "NRC")) %>%
-  count(method, index = linenumber %/% 80, sentiment) %>%
+  count(method, index = linenumber %/% 40, sentiment) %>%
   pivot_wider(names_from = sentiment,
               values_from = n,
               values_fill = 0) %>% 
   mutate(sentiment = positive - negative)
 ```
 
-### plot the sentiment scores
 
 ```{r}
 bind_rows(afinn, bing_and_nrc) %>%
@@ -94,6 +165,8 @@ bind_rows(afinn, bing_and_nrc) %>%
   geom_col(show.legend = FALSE) +
   facet_wrap(~method, ncol = 1, scales = "free_y")
 ```
+
+The results of three different lexicons are different in an absolute sense. AFINN lexicon gives the largest absolute values. Bing et al. lexicon has lower absolute values. The results of AFINN and Bing roughly on the the same trends in sentiment. However, the result of NRC lexicon is very different from AFINN and Bing. Most of the sentiment scores in NRC are positive which contradicts the plot of the novel.
 
 ### look at how many positive and negative words are in these lexicons
 
@@ -106,7 +179,13 @@ get_sentiments("bing") %>%
   count(sentiment)
 ```
 
-### Extra credit
+Based on my understanding of the plot of this fiction, bing lexicon is better than nrc lexicon.
+
+### Conclusion
+
+Based on the above comparative analysis, bing lexicon is the best choice.
+
+## Extra credit
 
 ```{r}
 bing_and_nrc_lou <- bind_rows(
@@ -124,14 +203,13 @@ bing_and_nrc_lou <- bind_rows(
                filter(sentiment %in% c("positive","negative"))
   )%>%
   mutate(method="loughran"))%>%
-  count(method, index = linenumber %/% 80, sentiment) %>%
+  count(method, index = linenumber %/% 40, sentiment) %>%
   pivot_wider(names_from = sentiment,
               values_from = n,
               values_fill = 0) %>% 
   
   mutate(sentiment = positive - negative)
 ```
-
 
 ```{r}
 bind_rows(afinn, bing_and_nrc_lou) %>%

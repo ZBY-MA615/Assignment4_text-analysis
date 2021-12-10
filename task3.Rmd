@@ -44,5 +44,6 @@ tnum.getDBPathList(taxonomy="subject",levels = 2) #get phrase taxonomies
 ### use query to check INs
 
 ```{r}
-q20<-tnum.que
+q20<-tnum.query("TheCashBoy1/ZZzby# has *",max=3)
+df20<-tnum.obj
 ```
