@@ -41,7 +41,7 @@ MD<-gutenberg_download(296,mirror=NULL)
 
 ### Word frequencies
 
-Firstly, I look at word frequencies and the most common words in The Cash Boy.
+I look at word frequencies and the most common words in The Cash Boy.
 
 ```{r ,echo=FALSE}
 tidy_MD <- MD %>%
@@ -59,6 +59,18 @@ tidy_MD %>%
 
 According to the above results, we can conclude that "frank" (the cash boy's name)is the most common word. After looking at word frequencies, most of the words are name. Frank's experiences are unfortunate, I want to find some negative words, such as fear, and do the sentiment analysis about fear.
 
+I also used wordcould package to visualize these words. Word cloud plot easily show the frequency of different words.
+
+```{r}
+#install.packages(c("wordcloud","tm"),repos="http://cran.r-project.org")
+library(wordcloud)
+tidy_MD %>%
+  anti_join(stop_words) %>%
+  count(word) %>%
+  with(wordcloud(word, n, max.words = 100))
+
+```
+
 ## sentiment analysis
 
 To analyze the sentiment of The Cash Boy, I consider the text as a combination of individual words and the sentiment content as the sum of individual words. 
@@ -74,7 +86,7 @@ pnn
 
 pnn %>%
   group_by(sentiment) %>%
-  slice_max(n, n = 10) %>% 
+  slice_max(n, n = 15) %>% 
   ungroup() %>%
   mutate(word = reorder(word, n)) %>%
   ggplot(aes(n, word, fill = sentiment)) +
@@ -83,6 +95,7 @@ pnn %>%
   labs(x = "number",y =" Word")+
   theme_bw()
 ```
+
 Secondly, I used "nrc" to select words which are negative.
 
 ```{r,echo=FALSE}
@@ -94,6 +107,17 @@ ff<-tidy_MD %>%
 ff
 ```
 
+To tag positive and negative words in another way, I send datanto comparison.cloud() which can all be done with joins, poping, and dplyr.
+
+```{r}
+library(reshape2)
+tidy_MD %>%
+  inner_join(get_sentiments("bing")) %>%
+  count(word, sentiment, sort = TRUE) %>%
+  acast(word ~ sentiment, value.var = "n", fill = 0) %>%
+  comparison.cloud(colors = c("gray20", "gray80"),
+                   max.words = 100)
+```
 According to the results of ff, there are indeed some words related to fear
 
 Thirdly, I selected words with n>3 and visualize them. 
@@ -104,12 +128,6 @@ ggplot(data=ff1,mapping=aes(n,word,color=word))+geom_point()+labs(title = "Commo
 ```
 According to the plot, it is obvious that "afraid" is the most common negative word related to fear. 
 
-
-```{r}
-# Kernel density plots for negative words
-#grouped by word(indicated by word)
-qplot(n,word,data=ff1,geom=c("boxplot","jitter"),fill=word,alpha=I(.5),main="Distribution of common negative words",xlab="Number",ylab="Word")
-```
 
 ### count up how many positive and negative words there are in defined section
 
@@ -123,9 +141,6 @@ tcb1 <- tidy_MD %>%
   mutate(sentiment = positive - negative)
 tcb1
 ```
-
-
-
 
 
 
@@ -183,9 +198,15 @@ Based on my understanding of the plot of this fiction, bing lexicon is better th
 
 ### Conclusion
 
-Based on the above comparative analysis, bing lexicon is the best choice.
+Based on the above comparative analysis, both bing lexicon and AFINN lexicon are suitable for sentiment analysis of The Cash Boy. 
 
 ## Extra credit
+
+I tried loughran lexicon to make sentiment analysis, because its output is similar to bing lexicon and is in line with sad plots of The Cash Boy. 
+
+```{r}
+get_sentiments("loughran")
+```
 
 ```{r}
 bing_and_nrc_lou <- bind_rows(
@@ -217,3 +238,10 @@ bind_rows(afinn, bing_and_nrc_lou) %>%
   geom_col(show.legend = FALSE) +
   facet_wrap(~method, ncol = 1, scales = "free_y")
 ```
+
+### Match Analysis
+
+According to the above plots, the score of loughran has lower absolute value. As I mentioned in introduction part, the story is about a little poor boy, which lost everyone he loved except his little sister. At the begin, Frank lost parents, so he experienced sadness. Sentiment Scores change from positive to negative twice. After Frank arrived New York, he makes some money so that he can support himself and little sister. There are joys and sorrows in New York, so there are positive and negative scores. At the end of sotry, Frank walked out of sorrow, sentiment scores are positive. Therefore,  bing lexicon and AFINN lexicon are suitable for sentiment analysis of The Cash Boy. 
+
+
+
