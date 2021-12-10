@@ -246,6 +246,6 @@ According to the above plots, the score of loughran has lower absolute value. As
 
 ## Reference
 
-Julia Silge & David Robinson. (2016). Welcome to Text Mining with R [online]. Available from:  https://www.tidytextmining.com/index.html [accessed 9 December 2021].
+Julia Silge & David Robinson. (2016). Welcome to Text Mining with R [online]. Available from: https://www.tidytextmining.com/index.html [accessed 9 December 2021].
 
 
