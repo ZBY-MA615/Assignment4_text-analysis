@@ -14,6 +14,13 @@ library(tidyverse)
 
 ## MA615 Assignment4 Text Analysis_Task3 
 
+### Introduction of The Cash Boy
+
+The book I choose is The Cash Boy,a juvenile fiction.  Here is the link https://www.gutenberg.org/ebooks/296. I used the gutenbergr package which provides access to the public domain works from Project Gutenberg collection to download this book.
+
+The story is about a little poor boy, which lost everyone he loved except his little sister. Because the situation with no parents and income, the boy moved to New York for himself, so he could make some money for him and his sister.
+
+
 Installing the R tnum package
 ```{r cars}
 #install.packages("glue")
@@ -25,11 +32,14 @@ devtools::install_github("Truenumbers/tnum/tnum",force = TRUE)
 
 
 Load the tnum package and authorize the mssp1 server
+
 ```{r pressure, echo=FALSE}
 library(tnum)
 tnum.authorize("mssp1.bu.edu") #connect and authenticate to Truenumbers server
 tnum.setSpace("test2") #set a particular numberspace as current
 ```
+
+I download  The Cash Boy and put it into tnum.
 
 ```{r}
 source("Book2TN-v6A-1.R")
@@ -43,7 +53,67 @@ tnum.getDBPathList(taxonomy="subject",levels = 2) #get phrase taxonomies
 
 ### use query to check INs
 
+I show the tnum database of The Cash Boy.
+
 ```{r}
 q20<-tnum.query("TheCashBoy1/ZZzby# has *",max=3)
-df20<-tnum.obj
+df20<-tnum.objectsToDf(q20)
+knitr::kable(df20%>%select(subject:numeric.value)%>%head())
+
+#q22<-tnum.query("TheCashBoy1/ZZzby/headings:0022# has *")
+#df22<-tnum.objectsToDf(q22)
+#ord_ch1<-unlist(tnum.query("TheCashBoy1/ZZzby/headings:0022# has ordinal"))
 ```
+
+I use query section and heading text to show the head
+
+```{r}
+q24<-tnum.query("TheCashBoy1/ZZzby/headings# has *",max=20)
+df24<-tnum.objectsToDf(q24)
+df24%>%select(subject:string.value)%>%head()
+```
+
+
+### Sentiment Annalysis
+
+I used sentimentr package to do sentiment analysis and get sentiment score.
+
+```{r}
+#install.packages("sentimentr")
+library(sentimentr)
+bb<-TCB$text[35:45]
+aa<-sentiment(TCB$text)
+ab<-sentiment(bb)
+
+df30<- tnum.query("TheCashBoy1/ZZzby/headings# has text",max=500) %>% tnum.objectsToDf()
+
+book_sentence<-df30 %>% separate(col=subject,
+                  into = c("path1", "path2","section","paragraph","sentence"), 
+                  sep = "/", 
+                  fill = "right") %>% 
+  select(section:string.value)
+#detect the section paragraoh and sentence number and convert it from character into numeric
+book_sentence<-book_sentence %>% mutate_at(c('section','paragraph','sentence'),~str_extract_all(.,"\\d+") %>% unlist() %>% as.numeric())
+# use sentimentr to get sentiment score group by these scores with section to get the average result
+sentence_out<-book_sentence %>% dplyr::mutate(sentence_split = get_sentences(string.value))%$%
+    sentiment_by(sentence_split, list(section))
+plot(sentence_out)
+```
+
+
+### Comparative Analysis
+
+```{r}
+
+
+```
+
+### Extra Credit
+
+```{r}
+
+```
+
+### Reference
+
+Julia Silge & David Robinson. (2016). Welcome to Text Mining with R [online]. Available from: https://www.tidytextmining.com/index.html [accessed 9 December 2021].

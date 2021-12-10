@@ -63,11 +63,14 @@ I also used wordcould package to visualize these words. Word cloud plot easily s
 
 ```{r}
 #install.packages(c("wordcloud","tm"),repos="http://cran.r-project.org")
+#install.packages("RColorBrewer")
+library(RColorBrewer)
 library(wordcloud)
+pal2<-brewer.pal(8,"Set2")
 tidy_MD %>%
   anti_join(stop_words) %>%
   count(word) %>%
-  with(wordcloud(word, n, max.words = 100))
+  with(wordcloud(word, n,colors=pal2, max.words = 100))
 
 ```
 
@@ -115,9 +118,10 @@ tidy_MD %>%
   inner_join(get_sentiments("bing")) %>%
   count(word, sentiment, sort = TRUE) %>%
   acast(word ~ sentiment, value.var = "n", fill = 0) %>%
-  comparison.cloud(colors = c("gray20", "gray80"),
+  comparison.cloud(colors = c("magenta", "darkorchid"),
                    max.words = 100)
 ```
+
 According to the results of ff, there are indeed some words related to fear
 
 Thirdly, I selected words with n>3 and visualize them. 
