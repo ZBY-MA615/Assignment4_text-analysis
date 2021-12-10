@@ -244,4 +244,8 @@ bind_rows(afinn, bing_and_nrc_lou) %>%
 According to the above plots, the score of loughran has lower absolute value. As I mentioned in introduction part, the story is about a little poor boy, which lost everyone he loved except his little sister. At the begin, Frank lost parents, so he experienced sadness. Sentiment Scores change from positive to negative twice. After Frank arrived New York, he makes some money so that he can support himself and little sister. There are joys and sorrows in New York, so there are positive and negative scores. At the end of sotry, Frank walked out of sorrow, sentiment scores are positive. Therefore,  bing lexicon and AFINN lexicon are suitable for sentiment analysis of The Cash Boy. 
 
 
+## Reference
+
+Julia Silge & David Robinson. (2016). Welcome to Text Mining with R [online]. Avalilable from: https://www.tidytextmining.com/index.html [accessed 9 December 2021].
+
 
